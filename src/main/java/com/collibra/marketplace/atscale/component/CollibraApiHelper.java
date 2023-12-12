@@ -2,7 +2,9 @@ package com.collibra.marketplace.atscale.component;
 
 import com.collibra.marketplace.atscale.config.ApplicationConfig;
 import com.collibra.marketplace.atscale.exception.DataNotFoundException;
+import com.collibra.marketplace.atscale.model.Attribute;
 import com.collibra.marketplace.atscale.model.Dataset;
+import com.collibra.marketplace.atscale.model.Measure;
 import com.collibra.marketplace.atscale.model.Project;
 import com.collibra.marketplace.atscale.util.Constants;
 import com.collibra.marketplace.atscale.util.CustomConstants;
@@ -479,4 +481,79 @@ public class CollibraApiHelper {
         return false;
     }
 
+
+    public List<Project> getCollibraAssets(ApplicationConfig appConfig) {
+        UUID domainId = UUID.fromString(appConfig.getAtscaleBusinessAssetDomainId());
+        UUID measerTypeId = UUID.fromString(CustomConstants.AssetType.ATSCALE_MEASURE.getId());
+        List<UUID> typesId = new ArrayList<UUID>();
+        typesId.add(measerTypeId);
+        AssetsApi assetsApi = this.collibraCoreApi.buildClient(AssetsApi.class);
+        AssetsApi.FindAssetsQueryParams params = new AssetsApi.FindAssetsQueryParams();
+        params.domainId(domainId);
+        params.typeId(typesId);
+        AssetPagedResponse assetPagedResponse = assetsApi.findAssets(params);
+        Map<String, List<AssetImpl>> assetMap = assetPagedResponse.getResults()
+                .stream()
+                .filter(asset -> asset.getName().contains(appConfig.getAtscaleApiHost()))
+                .collect(Collectors.groupingBy(
+                        assetImpl -> extractProjectNameFromMeasure(String.valueOf(assetImpl.getName())),
+                        Collectors.toList()));
+
+
+        UUID attributeTypeId = UUID.fromString(CollibraConstants.AttributeType.DESCRIPTION.getId());
+        AttributesApi.FindAttributesQueryParams attributesParam = new AttributesApi.FindAttributesQueryParams();
+        List<UUID> attributeUUIDList = new ArrayList<UUID>();
+        attributeUUIDList.add(attributeTypeId);
+        attributesParam.typeIds(attributeUUIDList);
+
+        AttributesApi attributesApi = this.collibraCoreApi.buildClient(AttributesApi.class);
+        AttributePagedResponse AttributePagedResponse = attributesApi.findAttributes(attributesParam);
+
+
+        List<Project> projectList = new ArrayList<Project>();
+
+        for (Map.Entry<String, List<AssetImpl>> entry : assetMap.entrySet()) {
+            String key = entry.getKey();
+            List<AssetImpl> assetsList = entry.getValue();
+            List<Measure> measureList = new ArrayList<Measure>();
+            String projectDisplayName = extractProjectDisplayName(key);
+            Project project = new Project();
+            project.setName(key);
+            project.setDisplayName(projectDisplayName);
+            for (AssetImpl assetImpl : assetsList) {
+                List<Attribute> myAttributeist = AttributePagedResponse.getResults().stream()
+                        .filter(attribute -> attribute.getAsset().getId().equals(assetImpl.getId()))
+                        .map(attibute1 -> {
+                            Attribute attributeO = new Attribute();
+                            attributeO.setId(String.valueOf(attibute1.getId()));
+                            attributeO.setTypeId(String.valueOf(attibute1.getType().getId()));
+                            attributeO.setName(String.valueOf(attibute1.getType().getName()));
+                            attributeO.setAssetId(String.valueOf(attibute1.getAsset().getId()));
+                            attributeO.setValue(String.valueOf(attibute1.getValue()));
+                            return attributeO;
+                        })
+                        .collect(Collectors.toList());
+                Measure measure = new Measure();
+                measure.setMeasureName(assetImpl.getDisplayName());
+                measure.setAttributeList(myAttributeist);
+                measureList.add(measure);
+            }
+
+            project.setMeasuresList(measureList);
+            projectList.add(project);
+        }
+
+        return projectList;
+
+    }
+
+    private String extractProjectNameFromMeasure(String assetName) {
+        int lastIndexOf = assetName.lastIndexOf(">");
+        return assetName.substring(0, assetName.substring(0, lastIndexOf).lastIndexOf(">"));
+    }
+
+    private String extractProjectDisplayName(String assetName) {
+        int lastIndexOfDelimiter = assetName.lastIndexOf(">");
+        return assetName.substring(lastIndexOfDelimiter + 1).trim();
+    }
 }

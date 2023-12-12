@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import java.util.List;
 
 @Data
 @Builder
@@ -26,4 +27,7 @@ public class Project {
   private String dateQueried;
   private Boolean isCurrentlyUsed;
   private Integer popularity;
+  //For Collibra assest pulling and mapping
+  private List<Measure> measuresList;
+  private String displayName;
 }

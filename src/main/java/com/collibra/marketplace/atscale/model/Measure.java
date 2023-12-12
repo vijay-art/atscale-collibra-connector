@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.util.List;
 
 @Data
 @Builder
@@ -46,6 +47,7 @@ public class Measure {
   private boolean isMetricalAttribute;
   private String parentLevelId;
   private String parentLevelName;
+  private List<Attribute> attributeList;
 
   private static final Logger LOGGER = LoggerFactory.getLogger(Measure.class);
 }

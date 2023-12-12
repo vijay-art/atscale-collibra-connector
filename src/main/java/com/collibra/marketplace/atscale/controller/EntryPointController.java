@@ -69,4 +69,10 @@ public class EntryPointController {
 		LOGGER.info("Remove obsolete assets triggered via API request");
 		return this.mainProcessor.removeObsolete();
 	}
+	@PostMapping("/syncCollibraToAtscale")
+	@ApiOperation(value = "syncCollibra")
+	public JsonNode syncCollibraToAtscale() {
+		LOGGER.info("In syncCollibraToAtscale");
+		return this.mainProcessor.syncCollibraToAtscale();
+	}
 }
