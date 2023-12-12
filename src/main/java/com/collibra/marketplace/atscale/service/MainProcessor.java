@@ -772,7 +772,7 @@ public class MainProcessor {
                 Map<String, Measure> collibraMeasureMap = convertCollibraMeasureASMap(collibraProjectMeasureList);
                 boolean flag = compareMeasureDescription(collibraMeasureMap, allMeasures);
                 if (flag) {
-                   // Call API to publish project
+                   // TODO
                 }
 
             }
