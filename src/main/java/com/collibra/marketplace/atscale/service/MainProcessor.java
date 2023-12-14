@@ -32,6 +32,7 @@ import org.springframework.stereotype.Service;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.collibra.marketplace.atscale.util.Constants.SOURCE;
 import static com.collibra.marketplace.atscale.util.Constants.TARGET;
@@ -755,5 +756,67 @@ public class MainProcessor {
     public boolean domainExists(CollibraDomain domain) {
         return !(domain == null || domain.getId() == null || domain.getId().length() == 0);
     }
+
+
+    public JsonNode syncCollibraToAtscale() {
+        List<Project> collibraProjectList = this.collibraApiHelper.getCollibraAssets(appConfig);
+        AtScaleInstance instance = retrieveAtScaleInstance();
+        Organization org = retrieveOrganization(null, null); // Organization: If values exist as endpoint parameters use those, otherwise use what's in properties.
+        Map<String, Project> projectsMap = retrieveProjects(instance, org);
+        for (Map.Entry<String, Project> currentProjectPair : projectsMap.entrySet()) {
+            List<Measure> collibraProjectMeasureList = getCollibraProjectMeasureList(collibraProjectList, currentProjectPair.getKey());
+            Map<String, Project> currentProject = new HashMap<>();
+            currentProject.put(currentProjectPair.getKey(), currentProjectPair.getValue());
+            List<Measure> allMeasures = retrieveMeasures(currentProject);
+            if (!Objects.requireNonNull(collibraProjectMeasureList).isEmpty()) {
+                Map<String, Measure> collibraMeasureMap = convertCollibraMeasureASMap(collibraProjectMeasureList);
+                boolean flag = compareMeasureDescription(collibraMeasureMap, allMeasures);
+                if (flag) {
+                   // TODO
+                }
+
+            }
+
+        }
+
+        return null;
+
+    }
+
+    private Map<String, Measure> convertCollibraMeasureASMap(List<Measure> collibraProjectMEasureList) {
+
+        return collibraProjectMEasureList.stream()
+                .collect(Collectors.toMap(Measure::getMeasureName, measure -> measure));
+
+    }
+
+    private boolean compareMeasureDescription(Map<String, Measure> collibraProjectMeasureMap, List<Measure> allMeasures) {
+
+        boolean flag = false;
+        for (Measure atscaleMeasure : allMeasures) {
+            if (collibraProjectMeasureMap.containsKey(atscaleMeasure.getMeasureCaption())) {
+                Measure collibraMEasure = collibraProjectMeasureMap.get(atscaleMeasure.getMeasureCaption());
+                if (!collibraMEasure.getAttributeList().isEmpty() && !collibraMEasure.getAttributeList().get(0).getValue().equals(atscaleMeasure.getDescription())) {
+                    atscaleMeasure.setDescription(collibraMEasure.getAttributeList().get(0).getValue());
+                    flag = true;
+                }
+            }
+
+        }
+        return flag;
+    }
+
+    private List<Measure> getCollibraProjectMeasureList(List<Project> projectList, String key) {
+
+        for (Project project : projectList) {
+
+            if (project.getName().contains(key)) {
+                return project.getMeasuresList();
+            }
+        }
+        return null;
+
+    }
+
 
 }
