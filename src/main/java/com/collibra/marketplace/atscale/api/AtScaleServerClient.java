@@ -184,4 +184,42 @@ public class AtScaleServerClient {
         disconnect();
         connect();
     }
+
+    public String buildPublishProjectURL(String projectId , String publishType , String publisherId, String linkedProjectId, String schemaType) {
+        String url = null;
+
+        try {
+            String protocol = HTTPS;
+            if (disableSSL) {
+                protocol = Constants.HTTP;
+            }
+            String organization = this.orgGUID;
+            url = String.format("%s://%s:%d/projects/orgId/%s/schema/publish/%s?publishType=%s&publisherId=%s&linkedProjectId=%s&schemaType=%s", protocol, engineHost, enginePort, organization,projectId,publishType,publisherId,linkedProjectId,schemaType);
+
+        } catch (Exception ex) {
+            LOGGER.error("Unable to create AtScale API URL", ex);
+            throw new AtScaleServerClientException("Unable to create AtScale API URL");
+        }
+        return url;
+    }
+
+    public String buildGetProjectSchemaURL(String projectId) {
+        String url = null;
+
+        try {
+            String protocol = HTTPS;
+            if (disableSSL) {
+                protocol = Constants.HTTP;
+            }
+            String organization = this.orgGUID;
+            url = String.format("%s://%s:%d/projects/orgId/%s/schema/%s", protocol, engineHost, enginePort, organization,projectId);
+
+        } catch (Exception ex) {
+            LOGGER.error("Unable to create AtScale API URL", ex);
+            throw new AtScaleServerClientException("Unable to create AtScale API URL");
+        }
+        return url;
+    }
+
+
 }

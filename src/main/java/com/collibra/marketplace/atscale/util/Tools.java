@@ -1,15 +1,27 @@
 package com.collibra.marketplace.atscale.util;
 
+import com.collibra.marketplace.atscale.model.Measure;
+import com.collibra.marketplace.atscale.model.Project;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 import java.io.StringReader;
+import java.io.StringWriter;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.collibra.marketplace.atscale.util.Constants.NEW_LINE_WITH_ASTERISK;
 
@@ -205,5 +217,100 @@ public class Tools {
 
     public static boolean hasStringValue(String in) {
         return !(in == null || in.isEmpty());
+    }
+
+    public static Map<String, Measure> convertCollibraMeasureASMap(List<Measure> collibraProjectMEasureList) {
+
+        return collibraProjectMEasureList.stream()
+                .collect(Collectors.toMap(measure -> measure.getCubeName().trim()+"-"+measure.getMeasureName(), measure -> measure));
+
+    }
+
+    public static boolean compareMeasureDescription(Map<String, Measure> collibraProjectMeasureMap, List<Measure> allMeasures, Map<String, Measure> updatedMeasureList) {
+        boolean flag = false;
+        for (Measure atscaleMeasure : allMeasures) {
+            if (collibraProjectMeasureMap.containsKey(atscaleMeasure.getCubeName()+"-"+atscaleMeasure.getMeasureCaption())) {
+                Measure collibraMEasure = collibraProjectMeasureMap.get(atscaleMeasure.getCubeName()+"-"+atscaleMeasure.getMeasureCaption());
+                if (!collibraMEasure.getAttributeList().isEmpty() && !collibraMEasure.getAttributeList().get(0).getValue().equals(atscaleMeasure.getDescription())) {
+                    atscaleMeasure.setDescription(collibraMEasure.getAttributeList().get(0).getValue());
+                    updatedMeasureList.put(atscaleMeasure.getMeasureGUID(),atscaleMeasure);
+                    flag = true;
+                }
+            }
+
+        }
+        return flag;
+    }
+
+    public static List<Measure> getCollibraProjectMeasureList(List<Project> projectList, String key) {
+        for (Project project : projectList) {
+            if (project.getName().contains(key)) {
+                return project.getMeasuresList();
+            }
+        }
+        return null;
+    }
+
+    public static void modifySchema(NodeList parentNode, Document document1, Map<String, Measure> updatedMeasureMap) {
+        if (parentNode != null) {
+            for (int i = 0; i < parentNode.getLength(); i++) {
+                Element attributeElement = (Element) parentNode.item(i);
+                String attributeId = attributeElement.getAttribute("id");
+                if (updatedMeasureMap.containsKey(attributeId)) {
+                    NodeList propertyNodes = attributeElement.getElementsByTagName("properties");
+                    for (int k = 0; k < propertyNodes.getLength(); k++) {
+                        Element propertyElement = (Element) propertyNodes.item(k);
+                        String measureDescription = getMeasureDescription(attributeId, updatedMeasureMap);
+                        if (measureDescription != null) {
+                            NodeList descriptionNodes = propertyElement.getElementsByTagName("description");
+                            if (descriptionNodes != null && descriptionNodes.getLength() > 0) {
+                                for (int n = 0; n < descriptionNodes.getLength(); n++) {
+                                    Element deescriptionElement = (Element) descriptionNodes.item(n);
+                                    deescriptionElement.setTextContent(measureDescription);
+                                }
+                            } else {
+                                org.w3c.dom.Element descriptionElement = document1.createElement("description");
+                                descriptionElement.setTextContent(measureDescription);
+                                propertyElement.appendChild(descriptionElement);
+                            }
+                        }
+
+
+                    }
+                }
+
+
+            }
+        }
+    }
+
+    public static String formatdocumentToXml(Document document1) {
+        StringWriter writer1 = new StringWriter();
+        TransformerFactory transformerFactory1 = TransformerFactory.newInstance();
+        Transformer transformer1 = null;
+        try {
+            transformer1 = transformerFactory1.newTransformer();
+        } catch (TransformerConfigurationException e) {
+            throw new RuntimeException(e);
+        }
+        try {
+            transformer1.transform(new DOMSource(document1), new StreamResult(writer1));
+        } catch (TransformerException e) {
+            throw new RuntimeException(e);
+        }
+        String formattedXml = writer1.toString();
+        return formattedXml;
+    }
+
+    public static String getMeasureDescription(String attributeId, Map<String, Measure> updatedMeasureMap) {
+
+        Measure measure = updatedMeasureMap.get(attributeId);
+        if(measure!=null) {
+            return measure.getDescription();
+        }
+        else{
+            return null;
+        }
+
     }
 }

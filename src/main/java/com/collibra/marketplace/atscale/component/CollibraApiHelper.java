@@ -536,6 +536,7 @@ public class CollibraApiHelper {
                 Measure measure = new Measure();
                 measure.setMeasureName(assetImpl.getDisplayName());
                 measure.setAttributeList(myAttributeist);
+                measure.setCubeName(getCubeNameFromMeasureName(assetImpl.getName()));
                 measureList.add(measure);
             }
 
@@ -545,6 +546,13 @@ public class CollibraApiHelper {
 
         return projectList;
 
+    }
+
+    private String getCubeNameFromMeasureName(String name) {
+        int lastIndexOfDelimiter = name.lastIndexOf(">");
+       String cubeName = name.substring(0,lastIndexOfDelimiter);
+        cubeName= cubeName.substring(cubeName.lastIndexOf(">")+1);
+       return cubeName;
     }
 
     private String extractProjectNameFromMeasure(String assetName) {

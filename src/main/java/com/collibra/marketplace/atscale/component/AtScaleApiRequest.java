@@ -7,13 +7,24 @@ import com.collibra.marketplace.atscale.api.SOAPResultSet;
 import com.collibra.marketplace.atscale.config.ApplicationConfig;
 import com.collibra.marketplace.atscale.model.*;
 import com.collibra.marketplace.atscale.util.Constants;
+import com.collibra.marketplace.atscale.util.Tools;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
+import org.springframework.web.client.RestTemplate;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import java.io.StringReader;
 import java.sql.SQLException;
 import java.util.*;
 
@@ -692,4 +703,71 @@ public class AtScaleApiRequest {
         }
         return allFolders;
     }
+
+    public void publishProject(Map.Entry<String, Project> currentProjectPair, Map<String, Measure> updatedMeasureMap) {
+        String requestBody=getProjetSchema(currentProjectPair,updatedMeasureMap);
+        atScaleServerClient.connect();
+        String token = atScaleServerClient.getConnection();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Authorization", "Bearer " + token);
+        headers.add("Content-Type",  MediaType.APPLICATION_XML_VALUE);
+        HttpEntity<?> httpEntity = new HttpEntity<Object>(requestBody, headers);
+        RestTemplate restTemplate=new RestTemplate();
+        ResponseEntity<Map<String, Object>> responseEntity = null;
+        String publishProjectUrl = atScaleServerClient.buildPublishProjectURL(currentProjectPair.getValue().getCatalogGUID(),"normal_publish","system",currentProjectPair.getValue().getCatalogGUID(),"project");
+        responseEntity = restTemplate.exchange(
+                publishProjectUrl,
+                HttpMethod.POST,
+                httpEntity,
+                new ParameterizedTypeReference<Map<String, Object>>() {});
+
+        Map<String, Object> responseBody = responseEntity.getBody();
+    }
+
+    private String getProjetSchema(Map.Entry<String, Project> currentProjectPair, Map<String, Measure> updatedMeasureMap) {
+        atScaleServerClient.connect();
+        String token = atScaleServerClient.getConnection();
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Authorization", "Bearer " + token);
+        headers.add("Content-Type", MediaType.APPLICATION_JSON_VALUE);
+        HttpEntity<?> httpEntity = new HttpEntity<Object>(null, headers);
+        RestTemplate restTemplate = new RestTemplate();
+        ResponseEntity<Map<String, Object>> responseEntity = null;
+        Project project = currentProjectPair.getValue();
+        String url = atScaleServerClient.buildGetProjectSchemaURL(project.getCatalogGUID());
+        try {
+            responseEntity = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    httpEntity,
+                    new ParameterizedTypeReference<Map<String, Object>>() {
+                    });
+            Map<String, Object> responseBody = responseEntity.getBody();
+            Map responseMap = (Map) responseBody.get("response");
+            String projectSchema = String.valueOf(responseMap.get("response"));
+            projectSchema = projectSchema.replace("<?xml version='1.0' encoding='UTF-8'?>", "");
+            projectSchema = "<envelope><project>" + projectSchema + "</project></envelope>";
+            DocumentBuilderFactory factory1 = DocumentBuilderFactory.newInstance();
+            DocumentBuilder builder1 = null;
+            builder1 = factory1.newDocumentBuilder();
+            Document document1 = null;
+            document1 = builder1.parse(new InputSource(new StringReader(projectSchema)));
+            String originalXml = Tools.formatdocumentToXml(document1);
+            document1 = builder1.parse(new InputSource(new StringReader(originalXml)));
+            Element cubesElement = (Element) document1.getElementsByTagName("cubes").item(0);
+            NodeList attributeNodes = cubesElement.getElementsByTagName("attribute");
+            Tools.modifySchema(attributeNodes,document1,updatedMeasureMap);
+            NodeList calculatedMembersNodes = document1.getElementsByTagName("calculated-member");
+            Tools.modifySchema(calculatedMembersNodes,document1,updatedMeasureMap);
+
+            return Tools.formatdocumentToXml(document1);
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
+
 }
