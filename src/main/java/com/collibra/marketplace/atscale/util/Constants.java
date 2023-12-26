@@ -73,10 +73,10 @@ public class Constants {
 
   //Shifted constant from classes
   public static final String ASSET_NAME_SEPARATOR = " > ";
-  public static final String PROJECTS_ENDPOINT = "/api/1.0/org/{orgId}/projects"; // Using DC host
-  public static final String PROJECT_XML_ENDPOINT = "/api/1.0/org/{orgId}/project/{projectId}/xml";
-  public static final String PUBLISHED_PROJECTS_ENDPOINT = "/projects/published/orgId/{orgId}"; // Using api host
-  public static final String CONNECTIONS_ENDPOINT = "/connection-groups/orgId/{orgId}"; // Using api host
+  public static final String PROJECTS_ENDPOINT = "{API_PATH_TO_GET_PROJECT_USING_DC_HOST}"; // Using DC host
+  public static final String PROJECT_XML_ENDPOINT = "{API_PATH_TO_GET_PROJECT_USING_XML}";
+  public static final String PUBLISHED_PROJECTS_ENDPOINT = "{API_PATH_TO_PUBLISH_PROJECT_USING_API_HOST}"; // Using api host
+  public static final String CONNECTIONS_ENDPOINT = "{API_PATH_TO_CONNECTIONS_PROJECT_USING_API_HOST}";
 
   public static final String AUTHORIZATION = "Authorization";
   public static final String BEARER = "Bearer";
