@@ -73,10 +73,10 @@ public class Constants {
 
   //Shifted constant from classes
   public static final String ASSET_NAME_SEPARATOR = " > ";
-  public static final String PROJECTS_ENDPOINT = "{API_PATH_TO_GET_PROJECT_USING_DC_HOST}"; // Using DC host
-  public static final String PROJECT_XML_ENDPOINT = "{API_PATH_TO_GET_PROJECT_USING_XML}";
-  public static final String PUBLISHED_PROJECTS_ENDPOINT = "{API_PATH_TO_PUBLISH_PROJECT_USING_API_HOST}"; // Using api host
-  public static final String CONNECTIONS_ENDPOINT = "{API_PATH_TO_CONNECTIONS_PROJECT_USING_API_HOST}"; // Using api host
+  public static final String PROJECTS_ENDPOINT = "/api/1.0/org/{orgId}/projects"; // Using DC host
+  public static final String PROJECT_XML_ENDPOINT = "/api/1.0/org/{orgId}/project/{projectId}/xml";
+  public static final String PUBLISHED_PROJECTS_ENDPOINT = "/projects/published/orgId/{orgId}"; // Using api host
+  public static final String CONNECTIONS_ENDPOINT = "/connection-groups/orgId/{orgId}"; // Using api host
 
   public static final String AUTHORIZATION = "Authorization";
   public static final String BEARER = "Bearer";
@@ -136,6 +136,16 @@ public class Constants {
   public static final String ATSCALE_SERVER_PASSWORD = "dummy";
   public static final String ATSCALE_ORGANIZATION_FILTER_NAME = "dummyUser";
   public static final String ATSCALE_ORGANIZATION_FILTER_GUID = "dummyUser";
+  public static final String HYPHEN = "-";
+  public static final String XML_VERSION = "<?xml version='1.0' encoding='UTF-8'?>";
+  public static final String PROJECT_SCHEMA_START_TAG = "<envelope><project>";
+  public static final String PROJECT_SCHEMA_END_TAG = "</project></envelope>";
+  public static final String JSON_RESPONSE_PROPERTY = "response";
+
+  public static final String CUBES = "cubes";
+  public static final String ATTRIBUTE = "attribute";
+  public static final String CALCULATED_MEMBER = "calculated-member";
+
 
   private Constants() {}
 }

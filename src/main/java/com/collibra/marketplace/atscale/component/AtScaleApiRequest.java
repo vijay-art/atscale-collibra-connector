@@ -705,22 +705,22 @@ public class AtScaleApiRequest {
     }
 
     public void publishProject(Map.Entry<String, Project> currentProjectPair, Map<String, Measure> updatedMeasureMap) {
-        String requestBody=getProjetSchema(currentProjectPair,updatedMeasureMap);
+        String requestBody = getProjetSchema(currentProjectPair, updatedMeasureMap);
         atScaleServerClient.connect();
         String token = atScaleServerClient.getConnection();
-
         HttpHeaders headers = new HttpHeaders();
-        headers.add("Authorization", "Bearer " + token);
-        headers.add("Content-Type",  MediaType.APPLICATION_XML_VALUE);
+        headers.add(AUTHORIZATION, BEARER + SPACE + token);
+        headers.add(CONTENT_TYPE, MediaType.APPLICATION_XML_VALUE);
         HttpEntity<?> httpEntity = new HttpEntity<Object>(requestBody, headers);
-        RestTemplate restTemplate=new RestTemplate();
+        RestTemplate restTemplate = new RestTemplate();
         ResponseEntity<Map<String, Object>> responseEntity = null;
-        String publishProjectUrl = atScaleServerClient.buildPublishProjectURL(currentProjectPair.getValue().getCatalogGUID(),"normal_publish","system",currentProjectPair.getValue().getCatalogGUID(),"project");
+        String publishProjectUrl = atScaleServerClient.buildPublishProjectURL(currentProjectPair.getValue().getCatalogGUID(), "normal_publish", "system", currentProjectPair.getValue().getCatalogGUID(), "project");
         responseEntity = restTemplate.exchange(
                 publishProjectUrl,
                 HttpMethod.POST,
                 httpEntity,
-                new ParameterizedTypeReference<Map<String, Object>>() {});
+                new ParameterizedTypeReference<Map<String, Object>>() {
+                });
 
         Map<String, Object> responseBody = responseEntity.getBody();
     }
@@ -729,8 +729,8 @@ public class AtScaleApiRequest {
         atScaleServerClient.connect();
         String token = atScaleServerClient.getConnection();
         HttpHeaders headers = new HttpHeaders();
-        headers.add("Authorization", "Bearer " + token);
-        headers.add("Content-Type", MediaType.APPLICATION_JSON_VALUE);
+        headers.add(AUTHORIZATION, BEARER + SPACE + token);
+        headers.add(CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
         HttpEntity<?> httpEntity = new HttpEntity<Object>(null, headers);
         RestTemplate restTemplate = new RestTemplate();
         ResponseEntity<Map<String, Object>> responseEntity = null;
@@ -744,10 +744,10 @@ public class AtScaleApiRequest {
                     new ParameterizedTypeReference<Map<String, Object>>() {
                     });
             Map<String, Object> responseBody = responseEntity.getBody();
-            Map responseMap = (Map) responseBody.get("response");
-            String projectSchema = String.valueOf(responseMap.get("response"));
-            projectSchema = projectSchema.replace("<?xml version='1.0' encoding='UTF-8'?>", "");
-            projectSchema = "<envelope><project>" + projectSchema + "</project></envelope>";
+            Map responseMap = (Map) responseBody.get(JSON_RESPONSE_PROPERTY);
+            String projectSchema = String.valueOf(responseMap.get(JSON_RESPONSE_PROPERTY));
+            projectSchema = projectSchema.replace(XML_VERSION, EMPTY_STRING);
+            projectSchema = PROJECT_SCHEMA_START_TAG + projectSchema + PROJECT_SCHEMA_END_TAG;
             DocumentBuilderFactory factory1 = DocumentBuilderFactory.newInstance();
             DocumentBuilder builder1 = null;
             builder1 = factory1.newDocumentBuilder();
@@ -755,14 +755,12 @@ public class AtScaleApiRequest {
             document1 = builder1.parse(new InputSource(new StringReader(projectSchema)));
             String originalXml = Tools.formatdocumentToXml(document1);
             document1 = builder1.parse(new InputSource(new StringReader(originalXml)));
-            Element cubesElement = (Element) document1.getElementsByTagName("cubes").item(0);
-            NodeList attributeNodes = cubesElement.getElementsByTagName("attribute");
-            Tools.modifySchema(attributeNodes,document1,updatedMeasureMap);
-            NodeList calculatedMembersNodes = document1.getElementsByTagName("calculated-member");
-            Tools.modifySchema(calculatedMembersNodes,document1,updatedMeasureMap);
-
+            Element cubesElement = (Element) document1.getElementsByTagName(CUBES).item(0);
+            NodeList attributeNodes = cubesElement.getElementsByTagName(ATTRIBUTE);
+            Tools.modifySchema(attributeNodes, document1, updatedMeasureMap);
+            NodeList calculatedMembersNodes = document1.getElementsByTagName(CALCULATED_MEMBER);
+            Tools.modifySchema(calculatedMembersNodes, document1, updatedMeasureMap);
             return Tools.formatdocumentToXml(document1);
-
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

@@ -24,6 +24,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.collibra.marketplace.atscale.util.Constants.ASSET_NAME_SEPARATOR;
 import static com.collibra.marketplace.atscale.util.Constants.OBSOLETE;
 
 @Service
@@ -294,9 +295,9 @@ public class CollibraApiHelper {
         for (Dataset ds : allDatasets) {
             if (ds.getSchema() != null && ds.getSchema().length() > 0) {
                 datasetsSet.add(
-                        (Tools.hasStringValue(ds.getDatabase()) ? ds.getDatabase() + Constants.ASSET_NAME_SEPARATOR + ds.getSchema() : ds.getSchema()));
+                        (Tools.hasStringValue(ds.getDatabase()) ? ds.getDatabase() + ASSET_NAME_SEPARATOR + ds.getSchema() : ds.getSchema()));
                 datasetsSet.add(AssetNames.prepareAssetName(new ArrayList<>(Arrays.asList(
-                        (Tools.hasStringValue(ds.getDatabase()) ? ds.getDatabase() + Constants.ASSET_NAME_SEPARATOR + ds.getSchema() : ds.getSchema()),
+                        (Tools.hasStringValue(ds.getDatabase()) ? ds.getDatabase() + ASSET_NAME_SEPARATOR + ds.getSchema() : ds.getSchema()),
                         ds.getTable()))));
             }
         }
@@ -323,9 +324,9 @@ public class CollibraApiHelper {
                             Integer count = 0;
                             for (AssetImpl schema : schemaAPR.getResults()) {
                                 if (schema.getId().equals(relation.getTarget().getId())) {
-                                    physicalMap.put(dbAsset.getName() + Constants.ASSET_NAME_SEPARATOR + relation.getTarget().getName(), schema.getDomain().getId().toString());
+                                    physicalMap.put(dbAsset.getName() + ASSET_NAME_SEPARATOR + relation.getTarget().getName(), schema.getDomain().getId().toString());
                                     physicalMap.put(relation.getTarget().getName(), schema.getDomain().getId().toString());
-                                    physicalMap.put(schema.getDomain().getId().toString(), dbAsset.getName() + Constants.ASSET_NAME_SEPARATOR + relation.getTarget().getName());
+                                    physicalMap.put(schema.getDomain().getId().toString(), dbAsset.getName() + ASSET_NAME_SEPARATOR + relation.getTarget().getName());
 
                                     // Within the schema domain find all tables used in our model and add tables and columns
                                     AssetsApi.FindAssetsQueryParams tableParams = new AssetsApi.FindAssetsQueryParams();
@@ -336,7 +337,7 @@ public class CollibraApiHelper {
 
                                     for (AssetImpl tableOrCol : tablesAPR.getResults()) {
                                         String assetID = AssetNames.prepareAssetName(new ArrayList<>(Arrays.asList(
-                                                (dbAsset != null ? dbAsset.getName() + Constants.ASSET_NAME_SEPARATOR + schema.getName() : schema.getName()),
+                                                (dbAsset != null ? dbAsset.getName() + ASSET_NAME_SEPARATOR + schema.getName() : schema.getName()),
                                                 tableOrCol.getName())));
 
                                         if (!foundTable && tableOrCol.getType().getName().equals("Table") && datasetsSet.contains(assetID)) {
@@ -549,19 +550,17 @@ public class CollibraApiHelper {
     }
 
     private String getCubeNameFromMeasureName(String name) {
-        int lastIndexOfDelimiter = name.lastIndexOf(">");
-       String cubeName = name.substring(0,lastIndexOfDelimiter);
-        cubeName= cubeName.substring(cubeName.lastIndexOf(">")+1);
-       return cubeName;
+        String[] assetsArray = name.split(ASSET_NAME_SEPARATOR);
+        return assetsArray[assetsArray.length - 2];
     }
 
     private String extractProjectNameFromMeasure(String assetName) {
-        int lastIndexOf = assetName.lastIndexOf(">");
-        return assetName.substring(0, assetName.substring(0, lastIndexOf).lastIndexOf(">"));
+        int lastIndexOf = assetName.lastIndexOf(ASSET_NAME_SEPARATOR);
+        return assetName.substring(0, assetName.substring(0, lastIndexOf).lastIndexOf(ASSET_NAME_SEPARATOR));
     }
 
     private String extractProjectDisplayName(String assetName) {
-        int lastIndexOfDelimiter = assetName.lastIndexOf(">");
-        return assetName.substring(lastIndexOfDelimiter + 1).trim();
+        String[] assetsArray = assetName.split(ASSET_NAME_SEPARATOR);
+        return assetsArray[assetsArray.length - 1];
     }
 }
