@@ -184,4 +184,24 @@ public class AtScaleServerClient {
         disconnect();
         connect();
     }
+
+    public String buildPublishProjectURL(String projectId , String publishType , String publisherId, String linkedProjectId, String schemaType) {
+        String protocol = getProtocol();
+        return String.format("%s://%s:%d/projects/orgId/%s/schema/publish/%s?publishType=%s&publisherId=%s&linkedProjectId=%s&schemaType=%s", protocol, engineHost, enginePort, this.orgGUID, projectId, publishType, publisherId, linkedProjectId, schemaType);
+    }
+
+    private String getProtocol() {
+        String protocol = HTTPS;
+        if (disableSSL) {
+            protocol = Constants.HTTP;
+        }
+        return protocol;
+    }
+
+    public String buildGetProjectSchemaURL(String projectId) {
+        String protocol = getProtocol();
+        return String.format("%s://%s:%d/projects/orgId/%s/schema/%s", protocol, engineHost, enginePort, this.orgGUID, projectId);
+    }
+
+
 }
