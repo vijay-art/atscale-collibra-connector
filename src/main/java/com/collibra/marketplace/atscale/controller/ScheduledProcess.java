@@ -41,4 +41,12 @@ public class ScheduledProcess {
 		}
 	}
 
+	@Scheduled(cron = "${trigger.scheduler.cron.expression.collibraToAtScale}")
+	public void syncCollibraToAtscaleCronScheduler() {
+		LOGGER.info("collibra-to-atscale-CRON TRIGGERED ... ");
+		if (this.appConfig.isCronIsEnabled()) {
+			LOGGER.info("Synchronization triggered via CRON Scheduler");
+			this.mainProcessor.syncCollibraToAtscale();
+		}
+	}
 }
